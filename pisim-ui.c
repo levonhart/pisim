@@ -11,6 +11,8 @@
 #define SMODULO 0x07FFFFFFFFFFFFFFp1
 #define SLIDERSTEPS 30
 
+#define SURFACERES 1080
+
 #define PISIM_TYPE_APP (pisim_app_get_type())
 
 #define PISIM_TYPE_WINDOW (pisim_app_window_get_type())
@@ -124,7 +126,7 @@ static void pisim_app_window_init(PisimAppWindow * window) {
 	g_signal_connect(size_adjust, "value-changed", G_CALLBACK(size_change), window);
 
 
-	multip_label = gtk_label_new("Multiplicativo");
+	multip_label = gtk_label_new("Multiplicador");
 	gtk_label_set_xalign(GTK_LABEL(multip_label), 1.0);
 	gtk_grid_attach(GTK_GRID(control), multip_label, 0, 1, 1, 1);
 
@@ -166,7 +168,7 @@ static void pisim_app_window_init(PisimAppWindow * window) {
 
 	g_signal_connect(aditiv_adjust, "value-changed", G_CALLBACK(aditiv_change), window);
 
-	modulo_label = gtk_label_new("Modulo");
+	modulo_label = gtk_label_new("Módulo");
 	gtk_label_set_xalign(GTK_LABEL(modulo_label), 1.0);
 	gtk_grid_attach(GTK_GRID(control), modulo_label, 0, 3, 1, 1);
 
@@ -195,6 +197,9 @@ static void pisim_app_window_init(PisimAppWindow * window) {
 	window->pi_label = pi_label;
 	gtk_label_set_selectable(GTK_LABEL(pi_label), TRUE);
 	gtk_box_append(GTK_BOX(pi_box), pi_label);
+
+	gtk_adjustment_set_value(size_adjust, NPOINTS);
+	size_change(size_adjust,window);
 }
 
 static void draw_graph (GtkDrawingArea * drawing_area, cairo_t * cr,
@@ -202,6 +207,7 @@ static void draw_graph (GtkDrawingArea * drawing_area, cairo_t * cr,
 	int unit = MIN(width,height)/2.0;
 	int center_x = width/2.0;
 	int center_y = height/2.0;
+	double scale = 2. * unit/SURFACERES;
 	cairo_surface_t * mask;
 
 	data_t * context = &((PisimAppWindow *) window)->context;
@@ -229,7 +235,9 @@ static void draw_graph (GtkDrawingArea * drawing_area, cairo_t * cr,
 
 	/* mask = cairo_surface_j */
 	cairo_set_source_rgba(cr, 0.1, 0.1, 1.0, 0.8);
-	cairo_mask_surface(cr, context->plot, 0, 0);
+	cairo_scale(cr, scale, scale);
+	cairo_mask_surface(cr, context->plot, (center_x - unit)/scale,
+	                                      (center_y - unit)/scale);
 }
 
 static void size_change(GtkAdjustment * adj, gpointer window) {
@@ -297,8 +305,7 @@ static void parameter_update(PisimAppWindow * window) {
 	point_t * p;
 	cairo_t * cr;
 	GtkWidget * draw = window->canvas;
-	int width = gtk_widget_get_width(draw),
-		height = gtk_widget_get_height(draw),
+	int width = SURFACERES, height = SURFACERES,
 		unit = MIN(height, width)/2.0;
 	GtkNative * native = gtk_widget_get_native(draw);
 
@@ -322,7 +329,7 @@ static void parameter_update(PisimAppWindow * window) {
 	for (size_t i = 0; i < context->size; i++) {
 		cairo_arc(cr, width/2.0 + p[i].x * unit,
 					  height/2.0 + p[i].y * unit,
-					  2.0, 0, 2*G_PI
+					  5.0, 0, 2*G_PI
 				 );
 		cairo_close_path(cr);
 	}
