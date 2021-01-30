@@ -1,5 +1,6 @@
 CC := clang
-CCFLAGS := `pkg-config --cflags gtk4`
+DFLAGS :=
+CCFLAGS := $(DFLAGS) `pkg-config --cflags gtk4`
 LDFLAGS := -lm `pkg-config --libs gtk4`
 
 TARGETS:= main pisim-ui
